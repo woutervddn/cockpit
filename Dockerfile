@@ -20,7 +20,7 @@ RUN echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini
 RUN chown -R www-data:www-data /var/www/html
 
 COPY . /var/www/html
-RUN mv docker-config.php config.php
+RUN mv docker-config.php /var/www/html/config/config.php
 RUN chmod -R 777 /var/www/html/storage
 VOLUME /var/www/html/storage
 
