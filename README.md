@@ -1,4 +1,7 @@
-# Cockpit Next
+# Cockpit Next Dokku
+
+**WARNING: This repository is meant to get Cockpit Next deployed on a Dokku instance. It is meant for personal use, and while you are more than welcome to use it, do not expect support with it. For all information about Cockpit itself, please visit [Cockpit on Github](https://github.com/agentejo/cockpit).**
+
 
 [![Backers on Open Collective](https://opencollective.com/cockpit/backers/badge.svg)](#backers) [![Sponsors on Open Collective](https://opencollective.com/cockpit/sponsors/badge.svg)](#sponsors)
 
@@ -9,12 +12,8 @@
 
 ### Requirements
 
-* PHP >= 7.0
-* PDO + SQLite (or MongoDB)
-* GD extension
-* mod_rewrite enabled (on apache)
-
-make also sure that <code>$_SERVER['DOCUMENT_ROOT']</code> exists and is set correctly.
+* Docker
+* Dokku
 
 
 ### Installation
@@ -23,23 +22,6 @@ make also sure that <code>$_SERVER['DOCUMENT_ROOT']</code> exists and is set cor
 2. Make sure that the __/cockpit/storage__ folder and all its subfolders are writable
 3. Go to __/cockpit/install__ via Browser
 4. You're ready to use Cockpit :-)
-
-
-### Build (Only if you modify JS components)
-
-You need [nodejs](https://nodejs.org/) installed on your system.
-
-First run `npm install` to install development dependencies
-
-1. Run `npm run build` - For one-time build of styles and components
-2. Run `npm run watch` - For continuous build every time styles or components change
-
-### Dockerized Development
-
-You need docker installed on your system: https://www.docker.com.
-
-1. Run `npm run docker-init` to build the initial image.
-2. Run `npm run docker` to start an Apache environment suited for Cockpit on port 8080 (this folder mapped to /var/www/html).
 
 
 ### Copyright and license
