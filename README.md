@@ -2,9 +2,6 @@
 
 **WARNING: This repository is meant to get Cockpit Next deployed on a Dokku instance. It is meant for personal use, and while you are more than welcome to use it, do not expect support with it. For all information about Cockpit itself, please visit [Cockpit on Github](https://github.com/agentejo/cockpit).**
 
-
-[![Backers on Open Collective](https://opencollective.com/cockpit/backers/badge.svg)](#backers) [![Sponsors on Open Collective](https://opencollective.com/cockpit/sponsors/badge.svg)](#sponsors)
-
 * Homepage: [http://getcockpit.com](http://getcockpit.com)
 * Twitter: [@getcockpit](http://twitter.com/getcockpit)
 * Support Forum: [https://discourse.getcockpit.com](https://discourse.getcockpit.com)
