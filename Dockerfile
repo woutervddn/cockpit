@@ -20,8 +20,8 @@ RUN echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini
 RUN chown -R www-data:www-data /var/www/html
 
 COPY . /var/www/html
+RUN mv docker-config.php config.php
 RUN chmod -R 777 /var/www/html/storage
-
-VOLUME /var/www/html
+VOLUME /var/www/html/storage
 
 CMD ["apache2-foreground"]

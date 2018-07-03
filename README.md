@@ -11,7 +11,9 @@
 Some modifications where made in order for the deployment to work as expected:
 
 * Change to the Dockerfile to include the repository
-* Change in the bootstrap script to use the default MONGO_URL instead of the COCKPIT_DATABASE_SERVER and COCKPIT_DATABASE_NAME
+* Add docker-config.php from [cockpit-docker](https://github.com/COCOPi/cockpit-docker)
+* Change in the docker-config.php script to use the default `MONGO_URL` instead of the COCKPIT_DATABASE_SERVER and `COCKPIT_DATABASE_NAME`
+* Change the Dockerfile to use docker-config.php as the config script
 
 ### Requirements
 
@@ -26,7 +28,7 @@ Some modifications where made in order for the deployment to work as expected:
 1. Download the Cockpit Dokku repository (as a repo, not as git) to your development machine
 2. Make sure your development machine has the rights to push to the Dokku instance
 3. Add the Dokku remote address: `git remote add dokku dokku@your.dokku.url:APPNAME` where `your.dokku.url` points to your machine and `APPNAME` is the name of your Cockpit application
-4. Push to your code to Dokku: either use `git push dokku master` or `git push dokku master:refs/heads/master` when the first one fails (sometimes this happens on first builds).
+4. Push to your code to Dokku: either use `git push dokku next:master` or `git push dokku next:refs/heads/master` when the first one fails (sometimes this happens on first builds). (Note: first build takes long enough to grab yourself a coffee)
 5. Login to your Dokku instance and create a new MongoDB: `dokku mongo:create APPNAMEDB` where `APPNAMEDB` is the name of your mongo database.
 6. Link your Mongo Database to your application: `dokku mongo:link APPNAMEDB APPNAME` where `APPNAMEDB` is the name of your db in step 5 and `APPNAME` is the name of your app in step 3.
 7. 
