@@ -18,7 +18,7 @@ if (!empty(getenv('COCKPIT_I18N'))){
 if (!empty(getenv('MONGO_URL'))){
   $configs['database'] = [
     "server"  => getenv('MONGO_URL'),
-    "options" => ["db" => substr(getenv('COCKPIT_DATABASE_NAME'), strrpos(getenv('COCKPIT_DATABASE_NAME'), '/') + 1)]
+    "options" => ["db" => substr(getenv('MONGO_URL'), strrpos(getenv('MONGO_URL'), '/') + 1)]
   ];
 }
 
