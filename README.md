@@ -17,6 +17,8 @@ Some modifications where made in order for the deployment to work as expected:
 
 * Docker
 * Dokku
+* Dokku Mongo Addon
+* Dokku Letsencrypt Addon
 
 
 ### Installation
