@@ -6,6 +6,12 @@
 * Twitter: [@getcockpit](http://twitter.com/getcockpit)
 * Support Forum: [https://discourse.getcockpit.com](https://discourse.getcockpit.com)
 
+### Changes
+
+Some modifications where made in order for the deployment to work as expected:
+
+* Change to the Dockerfile to include the repository
+* Change in the bootstrap script to use the default MONGO_URL instead of the COCKPIT_DATABASE_SERVER and COCKPIT_DATABASE_NAME
 
 ### Requirements
 
@@ -15,10 +21,13 @@
 
 ### Installation
 
-1. Download Cockpit and put the cockpit folder in the root of your web project
-2. Make sure that the __/cockpit/storage__ folder and all its subfolders are writable
-3. Go to __/cockpit/install__ via Browser
-4. You're ready to use Cockpit :-)
+1. Download the Cockpit Dokku repository (as a repo, not as git) to your development machine
+2. Make sure your development machine has the rights to push to the Dokku instance
+3. Add the Dokku remote address: `git remote add dokku dokku@your.dokku.url:APPNAME` where `your.dokku.url` points to your machine and `APPNAME` is the name of your Cockpit application
+4. Push to your code to Dokku: either use `git push dokku master` or `git push dokku master:refs/heads/master` when the first one fails (sometimes this happens on first builds).
+5. Login to your Dokku instance and create a new MongoDB: `dokku mongo:create APPNAMEDB` where `APPNAMEDB` is the name of your mongo database.
+6. Link your Mongo Database to your application: `dokku mongo:link APPNAMEDB APPNAME` where `APPNAMEDB` is the name of your db in step 5 and `APPNAME` is the name of your app in step 3.
+7. 
 
 
 ### Copyright and license
