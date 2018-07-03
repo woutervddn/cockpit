@@ -18,20 +18,58 @@ Some modifications where made in order for the deployment to work as expected:
 ### Requirements
 
 * Docker
-* Dokku
+* Dokku (in sub domain config if possible)
 * Dokku Mongo Addon
 * Dokku Letsencrypt Addon
 
 
 ### Installation
 
-1. Download the Cockpit Dokku repository (as a repo, not as git) to your development machine
+1. Download this Cockpit Dokku repository (as a repo, not as git) to your development machine
 2. Make sure your development machine has the rights to push to the Dokku instance
 3. Add the Dokku remote address: `git remote add dokku dokku@your.dokku.url:APPNAME` where `your.dokku.url` points to your machine and `APPNAME` is the name of your Cockpit application
 4. Push to your code to Dokku: either use `git push dokku next:master` or `git push dokku next:refs/heads/master` when the first one fails (sometimes this happens on first builds). (Note: first build takes long enough to grab yourself a coffee)
 5. Login to your Dokku instance and create a new MongoDB: `dokku mongo:create APPNAMEDB` where `APPNAMEDB` is the name of your mongo database.
 6. Link your Mongo Database to your application: `dokku mongo:link APPNAMEDB APPNAME` where `APPNAMEDB` is the name of your db in step 5 and `APPNAME` is the name of your app in step 3.
-7. 
+7. Mount a persistent storage volume to your application: `dokku storage:mount APPNAME /var/lib/dokku/data/storage/APPNAME:/var/www/html/storage` where once again `APPNAME` stands for the chosen application name in Step 3
+8. Make the storage folder `mkdir -p /var/lib/dokku/data/storage/APPNAME` (might require sudo)
+9. Go to your freshly created folder: `cd /var/lib/dokku/data/storage/APPNAME` 
+10. Make the necessary subfolders: `mkdir cache data thumbs tmp uploads` (might require sudo)
+11. Set the correct rights to the folder and subfolders: `chmod 777 -R /var/lib/dokku/data/storage/APPNAME` (might require sudo)
+12. Rebuild the application for the changes to take effect: `dokku ps:rebuild APPNAME`
+13. Go to APPNAME.your.dokku.url/install to receive a new username/password (usually admin/admin)
+14. Click the login button at the bottom of the page & log in with admin/admin
+15. Go to your account cirle in the top right > press Account and change your password & email!
+
+You might want to go further and test if everything is set up correctly with the next section.
+
+### Testing the installation
+
+To test the installation, the easiest way is to create something and then rebuild the app.
+
+1. On the dashboard press 'Create a singleton'
+2. Set the following: `name: test` `label: test` `description: test`
+3. Add a field and call the fieldname `test`
+4. Press SAVE
+5. Next to save press SHOW FORM
+6. enter `test` as value and press save
+
+Now the database has some data (the singleton content) and the storage has some data (the singleton format & fields). Proceed by restarting the app
+
+7. `dokku ps:rebuild APPNAME`
+8. Go to APPNAME.your.dokku.url and log in with your new password (and new account name if you changed that in the settings)
+9. If all went well you will be able to log in; if not try to visit APPNAME.your.dokku.url/install and check if the instalation already happened. If not, you've got a problem with your MongoDB
+
+If you see the `test` singleton, both your storage and MongoDB are running as expected. If you don't see the singleton there is a problem with your storage mount
+
+To further check your MongoDB when your storage is broken, you can recreate steps 1 to 5. If Mongo was configured correctly you'll see that `test` has been prefilled by the DB.
+
+### Removal instructions
+
+1. `dokku apps:destroy APPNAME`, confirm by typing APPNAME
+2. `dokku mongo:destroy APPNAMEDB`, configry by typing APPNAMEDB
+3. `rm -rf /var/lib/dokku/data/storage/APPNAME` (might require sudo)
+
 
 
 ### Copyright and license
