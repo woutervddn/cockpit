@@ -64,6 +64,24 @@ If you see the `test` singleton, both your storage and MongoDB are running as ex
 
 To further check your MongoDB when your storage is broken, you can recreate steps 1 to 5. If Mongo was configured correctly you'll see that `test` has been prefilled by the DB.
 
+### Securing the installation
+
+To ensure save data tranfer, get a free ssl certificate from letsencrypt:
+1. Set your contact details: `dokku config:set --no-restart APPNAME DOKKU_LETSENCRYPT_EMAIL=YOUR_EMAIL` where APPNAME is the name of your application and YOUR_EMAIL is your actual email address (this is important)
+2. Generate the certificate: `dokku letsencrypt APPNAME`
+3. Make sure you always have a fresh certificate: `dokku letsencrypt:cron-job --add`
+
+If you now log out and go back to APPNAME.your.dokku.url you should be getting the https connection & lock.
+You'll keep having it when you log back in.
+
+### Extending the installation, useful plugins
+
+- For easy adding of groups to your cockpit, see: https://github.com/serjoscha87/cockpit_GROUPS
+- For group based assets, see: https://github.com/serjoscha87/cockpit_GroupBoundAssets
+- For external storage, you can use: https://github.com/agentejo/CloudStorage (note that with https://github.com/agentejo/CloudStorage/pull/3, we might see Minio support soon. Minio also works on dokku)
+
+- For more official plugins, see: https://github.com/agentejo
+
 ### Removal instructions
 
 1. `dokku apps:destroy APPNAME`, confirm by typing APPNAME
