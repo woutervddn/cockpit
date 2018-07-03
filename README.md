@@ -11,6 +11,8 @@
 
 * Docker
 * Dokku
+* Dokku Mongo Addon
+* Dokku Letsencrypt Addon
 
 
 ### Installation
