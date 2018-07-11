@@ -22,6 +22,7 @@ RUN chown -R www-data:www-data /var/www/html
 COPY . /var/www/html
 RUN mkdir -p /var/www/html/config/
 RUN mv docker-config.php /var/www/html/config/config.php
+RUN mv uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 RUN chmod -R 777 /var/www/html/storage
 VOLUME /var/www/html/storage
 
