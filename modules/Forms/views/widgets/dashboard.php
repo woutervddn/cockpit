@@ -22,7 +22,7 @@
 
                 <ul class="uk-list uk-list-space uk-margin-top">
                     @foreach(array_slice($forms, 0, count($forms) > 5 ? 5: count($forms)) as $form)
-                    <li>
+                    <li class="uk-text-truncate">
                         <a href="@route('/forms/entries/'.$form['name'])">
 
                             <img class="uk-margin-small-right uk-svg-adjust" src="@url(isset($form['icon']) && $form['icon'] ? 'assets:app/media/icons/'.$form['icon']:'forms:icon.svg')" width="18px" alt="icon" data-uk-svg>
@@ -49,11 +49,7 @@
                     <img src="@url('forms:icon.svg')" width="30" height="30" alt="Forms" data-uk-svg />
                 </p>
 
-                @lang('No forms').
-
-                @hasaccess?('forms', 'create')
-                <a href="@route('/forms/form')">@lang('Create a form')</a>.
-                @end
+                @lang('No forms')
 
             </div>
 

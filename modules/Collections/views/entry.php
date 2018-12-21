@@ -54,7 +54,7 @@
 
                 <div class="uk-grid uk-grid-match uk-grid-gutter" if="{ !preview }">
 
-                    <div class="uk-width-medium-{field.width}" each="{field,idx in fields}" show="{!group || (group == field.group) }" if="{ hasFieldAccess(field.name) }" no-reorder>
+                    <div class="uk-width-medium-{field.width}" each="{field,idx in fields}" show="{checkVisibilityRule(field) && (!group || (group == field.group)) }" if="{ hasFieldAccess(field.name) }" no-reorder>
 
                         <div class="uk-panel">
 
@@ -89,13 +89,15 @@
 
                 </div>
 
-                <div class="uk-margin-large-top">
-                    <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
-                    <a class="uk-button uk-button-link" href="@route('/collections/entries/'.$collection['name'])">
-                        <span show="{ !entry._id }">@lang('Cancel')</span>
-                        <span show="{ entry._id }">@lang('Close')</span>
-                    </a>
-                </div>
+                <cp-actionbar>
+                    <div class="uk-container uk-container-center">
+                        <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
+                        <a class="uk-button uk-button-link" href="@route('/collections/entries/'.$collection['name'])">
+                            <span show="{ !entry._id }">@lang('Cancel')</span>
+                            <span show="{ entry._id }">@lang('Close')</span>
+                        </a>
+                    </div>
+                </cp-actionbar>
 
             </form>
 
@@ -103,49 +105,47 @@
 
         <div class="uk-grid-margin uk-width-medium-1-4 uk-flex-order-first uk-flex-order-last-medium">
 
-            <div class="uk-panel">
+            <div class="uk-margin uk-form" if="{ languages.length }">
 
-                <div class="uk-margin uk-form" if="{ languages.length }">
+                <div class="uk-width-1-1 uk-form-select">
 
-                    <div class="uk-width-1-1 uk-form-select">
+                    <label class="uk-text-small">@lang('Language')</label>
+                    <div class="uk-margin-small-top"><span class="uk-badge uk-badge-outline {lang ? 'uk-text-primary' : 'uk-text-muted'}">{ lang ? _.find(languages,{code:lang}).label:'Default' }</span></div>
 
-                        <label class="uk-text-small">@lang('Language')</label>
-                        <div class="uk-margin-small-top"><span class="uk-badge uk-badge-outline {lang ? 'uk-text-primary' : 'uk-text-muted'}">{ lang ? _.find(languages,{code:lang}).label:'Default' }</span></div>
-
-                        <select bind="lang" onchange="{persistLanguage}">
-                            <option value="">@lang('Default')</option>
-                            <option each="{language,idx in languages}" value="{language.code}">{language.label}</option>
-                        </select>
-                    </div>
-
-                </div>
-
-                <div class="uk-margin">
-                    <label class="uk-text-small">@lang('Last Modified')</label>
-                    <div class="uk-margin-small-top uk-text-muted" if="{entry._id}">
-                        <i class="uk-icon-calendar uk-margin-small-right"></i> {  App.Utils.dateformat( new Date( 1000 * entry._modified )) }
-                    </div>
-                    <div class="uk-margin-small-top uk-text-muted" if="{!entry._id}">@lang('Not saved yet')</div>
-                </div>
-
-                <div class="uk-margin" if="{entry._id}">
-                    <label class="uk-text-small">@lang('Revisions')</label>
-                    <div class="uk-margin-small-top">
-                        <span class="uk-position-relative">
-                            <cp-revisions-info class="uk-badge uk-text-large" rid="{entry._id}"></cp-revisions-info>
-                            <a class="uk-position-cover" href="@route('/collections/revisions/'.$collection['name'])/{entry._id}"></a>
-                        </span>
-                    </div>
-                </div>
-
-                <div class="uk-margin" if="{entry._id && entry._mby}">
-                    <label class="uk-text-small">@lang('Last update by')</label>
-                    <div class="uk-margin-small-top">
-                        <cp-account account="{entry._mby}"></cp-account>
-                    </div>
+                    <select bind="lang" onchange="{persistLanguage}">
+                        <option value="">@lang('Default')</option>
+                        <option each="{language,idx in languages}" value="{language.code}">{language.label}</option>
+                    </select>
                 </div>
 
             </div>
+
+            <div class="uk-margin">
+                <label class="uk-text-small">@lang('Last Modified')</label>
+                <div class="uk-margin-small-top uk-text-muted" if="{entry._id}">
+                    <i class="uk-icon-calendar uk-margin-small-right"></i> {  App.Utils.dateformat( new Date( 1000 * entry._modified )) }
+                </div>
+                <div class="uk-margin-small-top uk-text-muted" if="{!entry._id}">@lang('Not saved yet')</div>
+            </div>
+
+            <div class="uk-margin" if="{entry._id}">
+                <label class="uk-text-small">@lang('Revisions')</label>
+                <div class="uk-margin-small-top">
+                    <span class="uk-position-relative">
+                        <cp-revisions-info class="uk-badge uk-text-large" rid="{entry._id}"></cp-revisions-info>
+                        <a class="uk-position-cover" href="@route('/collections/revisions/'.$collection['name'])/{entry._id}"></a>
+                    </span>
+                </div>
+            </div>
+
+            <div class="uk-margin" if="{entry._id && entry._mby}">
+                <label class="uk-text-small">@lang('Last update by')</label>
+                <div class="uk-margin-small-top">
+                    <cp-account account="{entry._mby}"></cp-account>
+                </div>
+            </div>
+
+            @trigger('collections.entry.aside')
 
         </div>
 
@@ -222,6 +222,11 @@
 
             // bind clobal command + save
             Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function(e) {
+
+                if (App.$('.uk-modal.uk-open').length) {
+                    return;
+                }
+
                 $this.submit(e);
                 return false;
             });
@@ -287,7 +292,7 @@
                     App.ui.notify("Saving failed.", "danger");
                 }
             }, function(res) {
-                App.ui.notify(res && res.message ? res.message : "Saving failed.", "danger");
+                App.ui.notify(res && (res.message || res.error) ? (res.message || res.error) : "Saving failed.", "danger");
             });
 
             return false;
@@ -325,9 +330,29 @@
         copyLocalizedValue(e) {
 
             var field = e.target.getAttribute('field'),
-                lang = e.target.getAttribute('lang');
+                lang = e.target.getAttribute('lang'),
+                val = JSON.stringify(this.entry[field+(lang ? '_':'')+lang]);
 
-            this.entry[field+(this.lang ? '_':'')+this.lang] = this.entry[field+(lang ? '_':'')+lang];
+            this.entry[field+(this.lang ? '_':'')+this.lang] = JSON.parse(val);
+        }
+
+        checkVisibilityRule(field) {
+
+            if (field.options && field.options['@visibility']) {
+
+                try {
+                    return (new Function('$', 'v','return ('+field.options['@visibility']+')'))(this.entry, function(key) {
+                        var f = this.fieldsidx[key] || {};
+                        return this.entry[(f.localize && this.lang ? (f.name+'_'+this.lang):f.name)];
+                    }.bind(this));
+                } catch(e) {
+                    return false;
+                }
+
+                return this.data.check;
+            }
+
+            return true;
         }
 
     </script>

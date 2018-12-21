@@ -1,4 +1,4 @@
-/* Riot v3.10.3, @license MIT */
+/* Riot v3.13.1, @license MIT */
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
@@ -892,6 +892,8 @@
 
   var settings = extend(create(brackets.settings), {
     skipAnonymousTags: true,
+    // the "value" attributes will be preserved
+    keepValueAttributes: false,
     // handle the auto updates on any DOM event
     autoUpdate: true
   })
@@ -1578,6 +1580,7 @@
    * @param { ref } the dom reference location
    */
   function makeReplaceVirtual(tag, ref) {
+    if (!ref.parentNode) { return }
     var frag = createFragment();
     makeVirtual.call(tag, frag);
     ref.parentNode.replaceChild(frag, ref);
@@ -1676,9 +1679,11 @@
     var ref = this.__;
     var isAnonymous = ref.isAnonymous;
     var parent = dom && (expr.parent || dom.parentNode);
+    var keepValueAttributes = settings.keepValueAttributes;
     // detect the style attributes
     var isStyleAttr = attrName === 'style';
     var isClassAttr = attrName === 'class';
+    var isValueAttr = attrName === 'value';
 
     var value;
 
@@ -1717,7 +1722,18 @@
     }
 
     // remove original attribute
-    if (expr.attr && (!expr.wasParsedOnce || !hasValue || value === false)) {
+    if (expr.attr &&
+        (
+          // the original attribute can be removed only if we are parsing the original expression
+          !expr.wasParsedOnce ||
+          // or its value is false
+          value === false ||
+          // or if its value is currently falsy...
+          // We will keep the "value" attributes if the "keepValueAttributes"
+          // is enabled though
+          (!hasValue && (!isValueAttr || isValueAttr && !keepValueAttributes))
+        )
+    ) {
       // remove either riot-* attributes or just the attribute name
       removeAttribute(dom, getAttribute(dom, expr.attr) ? expr.attr : attrName);
     }
@@ -1773,7 +1789,7 @@
         dom[attrName] = value;
       }
 
-      if (attrName === 'value' && dom.value !== value) {
+      if (isValueAttr && dom.value !== value) {
         dom.value = value;
       } else if (hasValue && value !== false) {
         setAttribute(dom, attrName, value);
@@ -1973,7 +1989,11 @@
           setAttribute(root, IS_DIRECTIVE, tagName);
         }
 
-        tag = mount$1(root, riotTag || root.tagName.toLowerCase(), opts);
+        tag = mount$1(
+          root,
+          riotTag || root.tagName.toLowerCase(),
+          isFunction(opts) ? opts() : opts
+        );
 
         if (tag)
           { tags.push(tag); }
@@ -1984,7 +2004,7 @@
     // inject styles into DOM
     styleManager.inject();
 
-    if (isObject(tagName)) {
+    if (isObject(tagName) || isFunction(tagName)) {
       opts = tagName;
       tagName = 0;
     }
@@ -2078,7 +2098,7 @@
     return delete __TAG_IMPL[name]
   }
 
-  var version = 'v3.10.3';
+  var version = 'v3.13.1';
 
   var core = /*#__PURE__*/Object.freeze({
     Tag: Tag,
@@ -2550,6 +2570,8 @@
     update: function update$$1() {
       this.value = tmpl(this.expr, this.tag);
 
+      if (!this.stub.parentNode) { return }
+
       if (this.value && !this.current) { // insert
         this.current = this.pristine.cloneNode(true);
         this.stub.parentNode.insertBefore(this.current, this.stub);
@@ -2728,10 +2750,11 @@
   function setMountState(value) {
     var ref = this.__;
     var isAnonymous = ref.isAnonymous;
+    var skipAnonymous = ref.skipAnonymous;
 
     define(this, 'isMounted', value);
 
-    if (!isAnonymous) {
+    if (!isAnonymous || !skipAnonymous) {
       if (value) { this.trigger('mount'); }
       else {
         this.trigger('unmount');

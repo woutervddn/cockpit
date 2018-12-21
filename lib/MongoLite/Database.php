@@ -15,7 +15,7 @@ class Database {
     /**
      * @var array
      */
-    protected $collections = array();
+    protected $collections = [];
 
     /**
      * @var string
@@ -25,7 +25,7 @@ class Database {
     /**
      * @var array
      */
-    protected $document_criterias = array();
+    protected $document_criterias = [];
 
 
     /**
@@ -34,7 +34,7 @@ class Database {
      * @param string $path
      * @param array  $options
      */
-    public function __construct($path = ":memory:", $options = array()) {
+    public function __construct($path = ":memory:", $options = []) {
 
         $dns = "sqlite:{$path}";
 
@@ -101,11 +101,7 @@ class Database {
 
             $fn = null;
 
-            if (!function_exists('create_function')) {
-                eval('$fn = function($document) { return '.UtilArrayQuery::buildCondition($criteria).'; };');
-            } else {
-                $fn = create_function('$document','return '.UtilArrayQuery::buildCondition($criteria).';');
-            }
+            eval('$fn = function($document) { return '.UtilArrayQuery::buildCondition($criteria).'; };');
 
             $this->document_criterias[$id] = $fn;
 
@@ -170,7 +166,7 @@ class Database {
 
         $stmt   = $this->connection->query("SELECT name FROM sqlite_master WHERE type='table' AND name!='sqlite_sequence';");
         $tables = $stmt->fetchAll( \PDO::FETCH_ASSOC);
-        $names  = array();
+        $names  = [];
 
         foreach($tables as $table) {
             $names[] = $table["name"];
@@ -224,9 +220,9 @@ class Database {
 
 class UtilArrayQuery {
 
-    public static function buildCondition($criteria, $concat = " && ") {
+    public static function buildCondition($criteria, $concat = ' && ') {
 
-        $fn = array();
+        $fn = [];
 
         foreach ($criteria as $key => $value) {
 
@@ -234,9 +230,9 @@ class UtilArrayQuery {
 
                 case '$and':
 
-                    $_fn = array();
+                    $_fn = [];
 
-                    foreach($value as $v) {
+                    foreach ($value as $v) {
                         $_fn[] = self::buildCondition($v, ' && ');
                     }
 
@@ -245,9 +241,9 @@ class UtilArrayQuery {
                     break;
                 case '$or':
 
-                    $_fn = array();
+                    $_fn = [];
 
-                    foreach($value as $v) {
+                    foreach ($value as $v) {
                         $_fn[] = self::buildCondition($v, ' && ');
                     }
 
@@ -268,22 +264,30 @@ class UtilArrayQuery {
 
                     $d = '$document';
 
-                    if (strpos($key, ".") !== false) {
+                    if (strpos($key, '.') !== false) {
 
                         $keys = explode('.', $key);
 
                         foreach ($keys as $k) {
-                            $d .= '["'.$k.'"]';
+                            $d .= '[\''.$k.'\']';
                         }
 
                     } else {
-                        $d .= '["'.$key.'"]';
+                        $d .= '[\''.$key.'\']';
                     }
 
                     if (is_array($value)) {
-                        $fn[] = "\\MongoLite\\UtilArrayQuery::check((isset({$d}) ? {$d} : null), ".var_export($value, true).")";
+                        $fn[] = "\\MongoLite\\UtilArrayQuery::check((isset({$d}) ? {$d} : null), ".var_export($value, true).')';
                     } else {
-                        $fn[] = "(isset({$d}) && {$d}==".(is_string($value) ? "'{$value}'": var_export($value, true)).")";
+
+                        $_value = var_export($value, true);
+
+                        $fn[] = "(isset({$d}) && (
+                                    is_array({$d}) && is_string({$_value})
+                                        ? in_array({$_value}, {$d})
+                                        : {$d}=={$_value}
+                                    )
+                                )";
                     }
             }
         }
@@ -318,10 +322,18 @@ class UtilArrayQuery {
             case '$eq' :
                 $r = $a == $b;
                 break;
+
             case '$not' :
+            case '$ne' :
                 $r = $a != $b;
                 break;
+
             case '$gte' :
+                if ( (is_numeric($a) && is_numeric($b)) || (is_string($a) && is_string($b)) ) {
+                    $r = $a >= $b;
+                }
+                break;
+
             case '$gt' :
                 if ( (is_numeric($a) && is_numeric($b)) || (is_string($a) && is_string($b)) ) {
                     $r = $a > $b;
@@ -329,11 +341,17 @@ class UtilArrayQuery {
                 break;
 
             case '$lte' :
+                if ( (is_numeric($a) && is_numeric($b)) || (is_string($a) && is_string($b)) ) {
+                    $r = $a <= $b;
+                }
+                break;
+
             case '$lt' :
                 if ( (is_numeric($a) && is_numeric($b)) || (is_string($a) && is_string($b)) ) {
                     $r = $a < $b;
                 }
                 break;
+
             case '$in' :
                 if (is_array($a)) {
                     $r = is_array($b) ? count(array_intersect($a, $b)) : false;
@@ -353,13 +371,13 @@ class UtilArrayQuery {
             case '$has' :
                 if (is_array($b))
                     throw new \InvalidArgumentException('Invalid argument for $has array not supported');
-                if (!is_array($a)) $a = @json_decode($a, true) ?  : array();
+                if (!is_array($a)) $a = @json_decode($a, true) ?  : [];
                 $r = in_array($b, $a);
                 break;
 
             case '$all' :
-                if (!is_array($a)) $a = @json_decode($a, true) ?  : array();
-                if (! is_array($b))
+                if (!is_array($a)) $a = @json_decode($a, true) ?  : [];
+                if (!is_array($b))
                     throw new \InvalidArgumentException('Invalid argument for $all option must be array');
                 $r = count(array_intersect_key($a, $b)) == count($b);
                 break;
@@ -371,7 +389,7 @@ class UtilArrayQuery {
                 break;
 
             case '$size' :
-                if (!is_array($a)) $a = @json_decode($a, true) ?  : array();
+                if (!is_array($a)) $a = @json_decode($a, true) ?  : [];
                 $r = (int) $b == count($a);
                 break;
 
@@ -428,7 +446,7 @@ function levenshtein_utf8($s1, $s2) {
     $utf8_to_extended_ascii = function($str) use($map) {
 
         // find all multibyte characters (cf. utf-8 encoding specs)
-        $matches = array();
+        $matches = [];
 
         if (!preg_match_all('/[\xC0-\xF7][\x80-\xBF]+/', $str, $matches)) return $str; // plain ascii string
 
@@ -471,4 +489,31 @@ function fuzzy_search($search, $text, $distance = 3){
     }
 
     return $score / count($needles);
+}
+
+function createMongoDbLikeId() {
+
+    // based on https://gist.github.com/h4cc/9b716dc05869296c1be6
+
+    $timestamp = microtime(true);
+    $hostname  = php_uname('n');
+    $processId = getmypid();
+    $id        = random_int(10, 1000);
+    $result    = '';
+
+    // Building binary data.
+    $bin = sprintf(
+        "%s%s%s%s",
+        pack('N', $timestamp),
+        substr(md5($hostname), 0, 3),
+        pack('n', $processId),
+        substr(pack('N', $id), 1, 3)
+    );
+
+    // Convert binary to hex.
+    for ($i = 0; $i < 12; $i++) {
+        $result .= sprintf("%02x", ord($bin[$i]));
+    }
+
+    return $result;
 }

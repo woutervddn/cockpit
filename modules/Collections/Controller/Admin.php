@@ -8,16 +8,29 @@ class Admin extends \Cockpit\AuthController {
 
     public function index() {
 
-        $collections = $this->module('collections')->getCollectionsInGroup(null, true);
+        $_collections = $this->module('collections')->getCollectionsInGroup(null, true);
+        $collections  = [];
 
-        foreach ($collections as $collection => $meta) {
-            $collections[$collection]['allowed'] = [
+        foreach ($_collections as $collection => $meta) {
+
+            $meta['allowed'] = [
                 'delete' => $this->module('cockpit')->hasaccess('collections', 'delete'),
                 'create' => $this->module('cockpit')->hasaccess('collections', 'create'),
                 'edit' => $this->module('collections')->hasaccess($collection, 'collection_edit'),
                 'entries_create' => $this->module('collections')->hasaccess($collection, 'collection_create')
             ];
+
+            $collections[] = [
+              'name' => $collection,
+              'label' => isset($meta['label']) && $meta['label'] ? $meta['label'] : $collection,
+              'meta' => $meta
+            ];
         }
+
+        // sort collections
+        usort($collections, function($a, $b) {
+            return mb_strtolower($a['label']) <=> mb_strtolower($b['label']);
+        });
 
         return $this->render('collections:views/index.php', compact('collections'));
     }
@@ -67,18 +80,18 @@ class Admin extends \Cockpit\AuthController {
         // get field templates
         $templates = [];
 
-        foreach ($this->app->helper("fs")->ls('*.php', 'collections:fields-templates') as $file) {
+        foreach ($this->app->helper('fs')->ls('*.php', 'collections:fields-templates') as $file) {
             $templates[] = include($file->getRealPath());
         }
 
-        foreach ($this->app->module("collections")->collections() as $col) {
+        foreach ($this->app->module('collections')->collections() as $col) {
             $templates[] = $col;
         }
 
         // acl groups
         $aclgroups = [];
 
-        foreach ($this->app->helper("acl")->getGroups() as $group => $superAdmin) {
+        foreach ($this->app->helper('acl')->getGroups() as $group => $superAdmin) {
 
             if (!$superAdmin) $aclgroups[] = $group;
         }
@@ -101,6 +114,14 @@ class Admin extends \Cockpit\AuthController {
 
         if (!$collection) {
             return false;
+        }
+
+        if (!isset($collection['_id']) && !$this->module('cockpit')->hasaccess('collections', 'create')) {
+            return $this->helper('admin')->denyRequest();
+        }
+
+        if (isset($collection['_id']) && !$this->module('collections')->hasaccess($collection['name'], 'collection_edit')) {
+            return $this->helper('admin')->denyRequest();
         }
 
         return $this->module('collections')->saveCollection($collection['name'], $collection, $rules);
@@ -191,7 +212,7 @@ class Admin extends \Cockpit\AuthController {
 
         $view = 'collections:views/entry.php';
 
-        if ($override = $this->app->path('#config:collections/'.$collection['name'].'views/entry.php')) {
+        if ($override = $this->app->path('#config:collections/'.$collection['name'].'/views/entry.php')) {
             $view = $override;
         }
 
@@ -280,13 +301,17 @@ class Admin extends \Cockpit\AuthController {
 
     public function export($collection) {
 
-        if (!$this->app->module("cockpit")->hasaccess("collections", 'manage')) {
+        if (!$this->app->module("cockpit")->hasaccess('collections', 'manage')) {
             return false;
         }
 
         $collection = $this->module('collections')->collection($collection);
 
         if (!$collection) return false;
+
+        if (!$this->module('collections')->hasaccess($collection['name'], 'entries_view')) {
+            return $this->helper('admin')->denyRequest();
+        }
 
         $entries = $this->module('collections')->find($collection['name']);
 

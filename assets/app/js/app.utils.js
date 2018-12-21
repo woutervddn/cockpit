@@ -14,6 +14,7 @@
 
     App.Utils.isString    = function(val){ return "string"===typeof val; };
     App.Utils.isNumber    = function(val){ return "number"===typeof val; };
+    App.Utils.isNumeric   = function(val){ return !isNaN(parseFloat(val)) && isFinite(val); };
     App.Utils.isFunction  = function(val){ return "function"===typeof val; };
     App.Utils.isUndefined = function(val){ return "undefined"===typeof val; };
     App.Utils.isDefined   = function(val){ return "undefined"!==typeof val; };
@@ -317,9 +318,21 @@
         return Array.isArray(v) ? '<span class="uk-badge">'+v.length+(v.length==1 ? ' Component':' Components')+'</span>' : App.Utils.renderer.default(v);
     };
 
+    App.Utils.renderer.set = function(v, meta) {
 
-    App.Utils.renderValue = function(renderer, v) {
-        return (this.renderer[renderer] || this.renderer.default)(v);
+        if (v && meta && meta.options && meta.options.display) {
+
+            var str = meta.options.display;
+            Object.keys(v).forEach(function(k) { str = str.replace('{'+k+'}', v[k]) });
+            return str;
+        }
+
+        return App.Utils.renderer.default(v);
+    };
+
+
+    App.Utils.renderValue = function(renderer, v, meta) {
+        return (this.renderer[renderer] || this.renderer.default)(v, meta);
     };
 
     // riot enhancments

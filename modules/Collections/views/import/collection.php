@@ -246,6 +246,10 @@
 
                 $this.data = data;
 
+                if (data.headers.indexOf('_id') != -1) {
+                    $this.fields.unshift({name:'_id', options:{}});
+                }
+
                 // auto-map fields
                 $this.fields.forEach(function(f){
                     if (data.headers.indexOf(f.name) != -1) {
@@ -282,7 +286,11 @@
             });
 
             if (required.length) {
-                return App.ui.notify("Required fields are not mapped:<div class='uk-margin-small-top'>"+required+"</div>");
+
+                return App.ui.notify([
+                    App.i18n.get('Required fields are not mapped:'),
+                    '<div class="uk-margin-small-top">'+required+'</div>'
+                ].join(''));
             }
 
             var cnt    = 20,
@@ -331,7 +339,7 @@
 
                         Promise.all(promises).then(function(){
 
-                            App.callmodule('collections:save',[$this.collection.name, entries]).then(function(data) {
+                            App.request('/collections/import/execute',{collection: $this.collection.name, entries: entries}).then(function(data) {
 
                                 progress += cnt;
 
@@ -347,11 +355,17 @@
                                     $this.update();
                                 }
 
-                                resolve(data && data.result);
+                                resolve(data);
+
+                            }, function() {
+                                App.ui.notify('Import failed.', 'danger');
+                                $this.restart();
+                                $this.update();
                             });
+
                         }, function(msg) {
 
-                            App.ui.notify(msg, "danger");
+                            App.ui.notify(msg, 'danger');
 
                             progress += cnt;
 

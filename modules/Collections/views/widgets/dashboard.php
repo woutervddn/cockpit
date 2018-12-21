@@ -23,7 +23,7 @@
                     @foreach(array_slice($collections, 0, count($collections) > 5 ? 5: count($collections)) as $col)
                     <li>
                         <div class="uk-grid uk-grid-small">
-                            <div class="uk-flex-item-1">
+                            <div class="uk-flex-item-1 uk-text-truncate">
                                 <a href="@route('/collections/entries/'.$col['name'])">
 
                                     <img class="uk-margin-small-right uk-svg-adjust" src="@url(isset($col['icon']) && $col['icon'] ? 'assets:app/media/icons/'.$col['icon']:'collections:icon.svg')" width="18px" alt="icon" data-uk-svg>
@@ -59,11 +59,7 @@
                     <img src="@url('collections:icon.svg')" width="30" height="30" alt="Collections" data-uk-svg />
                 </p>
 
-                @lang('No collections').
-
-                @hasaccess?('collections', 'create')
-                <a href="@route('/collections/collection')">@lang('Create a collection')</a>.
-                @end
+                @lang('No collections')
             </div>
 
         @endif

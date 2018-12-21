@@ -51,7 +51,7 @@
 
                             <div class="uk-form-row">
                                 <label class="uk-text-small">@lang('Email')</label>
-                                <input class="uk-width-1-1 uk-form-large" type="email" bind="account.email" autocomplete="off" required>
+                                <input class="uk-width-1-1 uk-form-large" type="email" bind="account.email" autocomplete="off">
                             </div>
 
                             <div class="uk-form-row">
@@ -109,10 +109,12 @@
 
                         @trigger('cockpit.account.editview')
 
-                        <div class="uk-margin-large-top">
-                            <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
-                            <a class="uk-button uk-button-large uk-button-link" href="@route('/accounts')">@lang('Cancel')</a>
-                        </div>
+                        <cp-actionbar>
+                            <div class="uk-container uk-container-center">
+                                <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
+                                <a class="uk-button uk-button-large uk-button-link" href="@route('/accounts')">@lang('Cancel')</a>
+                            </div>
+                        </cp-actionbar>
 
                     </form>
 
@@ -225,6 +227,10 @@
             // bind clobal command + save
             Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function(e) {
 
+                if (App.$('.uk-modal.uk-open').length) {
+                    return;
+                }
+
                 e.preventDefault();
                 $this.submit();
                 return false;
@@ -256,11 +262,13 @@
 
         submit(e) {
 
-            if(e) e.preventDefault();
+            if (e) e.preventDefault();
 
-            App.request("/accounts/save", {"account": this.account}).then(function(data){
+            App.request("/accounts/save", {account: this.account}).then(function(data){
                 $this.account = data;
-                App.ui.notify("Account saved", "success");
+                App.ui.notify('Account saved', 'success');
+            }, function(res) {
+                App.ui.notify(res && (res.message || res.error) ? (res.message || res.error) : 'Saving failed.', 'danger');
             });
 
             return false;

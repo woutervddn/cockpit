@@ -1,6 +1,6 @@
 <?php
 
-$this->module("cockpit")->extend([
+$this->module('cockpit')->extend([
 
     'listAssets' => function($options = []) {
 
@@ -14,12 +14,12 @@ $this->module("cockpit")->extend([
         return compact('assets', 'total');
     },
 
-    'addAssets' => function($files) use($app) {
+    'addAssets' => function($files, $meta = []) use($app) {
 
-        $files      = isset($files[0]) ? $files : [$files];
-        $finfo      = finfo_open(FILEINFO_MIME_TYPE);
-        $assets     = [];
-        $created    = time();
+        $files     = isset($files[0]) ? $files : [$files];
+        $finfo     = finfo_open(FILEINFO_MIME_TYPE);
+        $assets    = [];
+        $created   = time();
 
         foreach ($files as &$file) {
 
@@ -73,23 +73,36 @@ $this->module("cockpit")->extend([
                 }
             }
 
+            $opts = ['mimetype' => $asset['mime']];
+
+            $this->app->trigger('cockpit.asset.upload', [&$asset, &$meta, &$opts]);
+            if (!$asset) {
+                continue;
+            }
+
             // move file
             $stream = fopen($file, 'r+');
-            $this->app->filestorage->writeStream("assets://{$path}", $stream);
+            $this->app->filestorage->writeStream("assets://{$path}", $stream, $opts);
             fclose($stream);
+
+            foreach ($meta as $key => $val) {
+                $asset[$key] = $val;
+            }
+
+            $this->app->trigger('cockpit.asset.save', [&$asset]);
 
             $assets[] = $asset;
         }
 
         if (count($assets)) {
-            $this->app->trigger('cockpit.assets.save', [$assets]);
+            $this->app->trigger('cockpit.assets.save', [&$assets]);
             $this->app->storage->insert('cockpit/assets', $assets);
         }
 
         return $assets;
     },
 
-    'uploadAssets' => function($param = 'files') {
+    'uploadAssets' => function($param = 'files', $meta = []) {
 
         $files     = $_FILES[$param] ?? [];
         $uploaded  = [];
@@ -97,13 +110,19 @@ $this->module("cockpit")->extend([
         $_files    = [];
         $assets    = [];
 
+        $allowed   = $this->getGroupVar('assets.allowed_uploads', $this->app->retrieve('allowed_uploads', '*'));
+        $allowed   = $allowed == '*' ? true : str_replace([' ', ','], ['', '|'], preg_quote(is_array($allowed) ? implode(',', $allowed) : $allowed));
+        $max_size = $this->getGroupVar('assets.max_upload_size', $this->app->retrieve('max_upload_size', 0));
+
         if (isset($files['name']) && is_array($files['name'])) {
 
             for ($i = 0; $i < count($files['name']); $i++) {
 
                 $_file  = $this->app->path('#tmp:').'/'.$files['name'][$i];
+                $_isAllowed = $allowed === true ? true : preg_match("/\.({$allowed})$/i", $_file);
+                $_sizeAllowed = $max_size ? filesize($files['tmp_name'][$i]) < $max_size : true;
 
-                if (!$files['error'][$i] && move_uploaded_file($files['tmp_name'][$i], $_file)) {
+                if (!$files['error'][$i] && $_isAllowed && $_sizeAllowed && move_uploaded_file($files['tmp_name'][$i], $_file)) {
 
                     $_files[]   = $_file;
                     $uploaded[] = $files['name'][$i];
@@ -116,7 +135,7 @@ $this->module("cockpit")->extend([
 
         if (count($_files)) {
 
-            $assets = $this->addAssets($_files);
+            $assets = $this->addAssets($_files, $meta);
 
             foreach ($_files as $file) {
                 unlink($file);
@@ -141,7 +160,10 @@ $this->module("cockpit")->extend([
             if (!$asset) continue;
 
             $this->app->storage->remove('cockpit/assets', ['_id' => $asset['_id']]);
-            $this->app->filestorage->delete('assets://'.trim($asset['path'], '/'));
+
+            if ($this->app->filestorage->has('assets://'.trim($asset['path'], '/'))) {
+                $this->app->filestorage->delete('assets://'.trim($asset['path'], '/'));
+            }
         }
 
         $this->app->trigger('cockpit.assets.remove', [$assets]);
@@ -155,14 +177,16 @@ $this->module("cockpit")->extend([
 
         foreach ($assets as &$asset) {
 
-            $_asset = $this->app->storage->findOne("cockpit/assets", ['_id' => $asset['_id']]);
+            $_asset = $this->app->storage->findOne('cockpit/assets', ['_id' => $asset['_id']]);
 
             if (!$_asset) continue;
 
             $asset['modified'] = time();
             $asset['_by'] = $this->app->module('cockpit')->getUser('_id');
 
-            $this->app->storage->save("cockpit/assets", $asset);
+            $this->app->trigger('cockpit.asset.save', [&$asset]);
+
+            $this->app->storage->save('cockpit/assets', $asset);
 
         }
 

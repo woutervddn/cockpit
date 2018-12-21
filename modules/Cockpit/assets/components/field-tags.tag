@@ -35,13 +35,34 @@
         this._tags = [];
 
         this.on('mount', function(){
+            this.update()
+        });
+
+        this.on('update', function(){
 
             if (opts.autocomplete) {
 
-                UIkit.autocomplete(this.refs.autocomplete, {source: opts.autocomplete});
+                var _source = opts.autocomplete;
+
+                if (Array.isArray(opts.autocomplete) && opts.autocomplete.length && !opts.autocomplete[0].value) {
+
+                    _source = [];
+
+                    opts.autocomplete.forEach(function(val) {
+                        _source.push({value:val})
+                    })
+                }
+
+                UIkit.autocomplete(this.refs.autocomplete, {source: _source, minLength: opts.minLength || 1});
             }
 
             App.$(this.root).on({
+
+                'selectitem.uk.autocomplete': function() {
+                    setTimeout(function(){
+                        $this.refs.input.value = '';
+                    }, 0)
+                },
 
                 'selectitem.uk.autocomplete keydown': function(e, data) {
 

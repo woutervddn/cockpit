@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="uk-height-1-1" lang="en" data-base="@base('/')" data-route="@route('/')">
+<html lang="{{ $app('i18n')->locale }}" class="uk-height-1-1" data-base="@base('/')" data-route="@route('/')" data-locale="{{ $app('i18n')->locale }}">
 <head>
     <meta charset="UTF-8">
     <title>@lang('Authenticate Please!')</title>
@@ -11,16 +11,25 @@
 
     <style>
 
-        html, body {
-            background: #0e0f19;
-        }
-
         .login-container {
-            width: 360px;
+            width: 420px;
             max-width: 90%;
         }
 
+        .login-dialog {
+            box-shadow: 0 30px 75px 0 rgba(10, 25, 41, 0.2);
+        }
+
+        .login-image {
+            background-image: url(@url('assets:app/media/logo.svg'));
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: 50% 50%;
+            height: 80px;
+        }
+
         .uk-panel-box-header {
+            background-color: #fafafa;
             border-bottom: none;
         }
 
@@ -49,23 +58,21 @@
 
             </div>
 
-            <div id="login-dialog" class="uk-panel-box uk-panel-space uk-panel-card uk-nbfc" show="{!$user}">
+            <div id="login-dialog" class="login-dialog uk-panel-box uk-panel-space uk-nbfc" show="{!$user}">
 
                 <div name="header" class="uk-panel-box-header uk-text-bold uk-text-center">
 
-                    <p>
-                        <img src="@url('assets:app/media/icons/login.svg')" width="80" alt="Login" data-uk-svg />
-                    </p>
+                    <div class="uk-margin login-image"></div>
 
                     <h2 class="uk-text-bold uk-text-truncate"><span>{{ $app['app.name'] }}</span></h2>
 
                     <div class="uk-animation-shake uk-margin-top" if="{ error }">
-                        <strong>{ error }</strong>
+                        <span class="uk-badge uk-badge-outline uk-text-danger">{ error }</span>
                     </div>
                 </div>
 
                 <div class="uk-form-row">
-                    <input ref="user" class="uk-form-large uk-width-1-1" type="text" placeholder="@lang('Username')" required>
+                    <input ref="user" class="uk-form-large uk-width-1-1" type="text" placeholder="@lang('Username')" autofocus required>
                 </div>
 
                 <div class="uk-form-row">
@@ -80,7 +87,7 @@
                 </div>
             </div>
 
-            <p class="uk-text-center" if="{!$user}"><a href="@route('/auth/forgotpassword')">@lang('Forgot Password?')</a></p>
+            <p class="uk-text-center" if="{!$user}"><a class="uk-button uk-button-link uk-link-muted" href="@route('/auth/forgotpassword')">@lang('Forgot Password?')</a></p>
 
 
         </form>
@@ -109,7 +116,7 @@
 
                     } else {
 
-                        this.error = 'Login failed';
+                        this.error = '@lang("Login failed")';
 
                         App.$(this.header).addClass('uk-bg-danger uk-contrast');
                         App.$('#login-dialog').removeClass('uk-animation-shake');
@@ -121,10 +128,16 @@
 
                     this.update();
 
-                }.bind(this));
+                }.bind(this), function(res) {
+                    App.ui.notify(res && (res.message || res.error) ? (res.message || res.error) : 'Login failed.', 'danger');
+                });
 
                 return false;
             }
+
+            // i18n for uikit-formPassword
+            UIkit.components.formPassword.prototype.defaults.lblShow = '@lang("Show")';
+            UIkit.components.formPassword.prototype.defaults.lblHide = '@lang("Hide")';
 
         </script>
 

@@ -180,6 +180,14 @@
                 this.fieldtypes.push({name:f, value:f});
             }
         }
+
+        // sort by field name
+
+        this.fieldtypes = this.fieldtypes.sort(function(fieldA, fieldB) {
+
+            return fieldA.name.localeCompare(fieldB.name);
+
+        });
         // --
 
         this.$updateValue = function(value, field) {
@@ -285,7 +293,7 @@
 
             this.field = e.item.field;
 
-            UIkit.modal(this.refs.modalField).show()
+            UIkit.modal(this.refs.modalField, {bgclose:false}).show()
         }
 
         togglelist(e) {

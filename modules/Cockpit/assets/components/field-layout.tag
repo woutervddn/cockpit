@@ -50,11 +50,11 @@
             </div>
 
             <div class="uk-margin" if="{parent.components[item.component].children}">
-                <field-layout bind="items[{idx}].children" child="true" components="{ parent.components }"></field-layout>
+                <field-layout bind="items[{idx}].children" child="true" components="{ parent.components }" exclude="{ opts.exclude }"></field-layout>
             </div>
 
             <div class="uk-margin" if="{item.component == 'grid'}">
-                <field-layout-grid bind="items[{idx}].columns" components="{ parent.components }"></field-layout-grid>
+                <field-layout-grid bind="items[{idx}].columns" components="{ parent.components }" exclude="{ opts.exclude }"></field-layout-grid>
             </div>
 
         </div>
@@ -229,9 +229,19 @@
             this.components = App.$.extend(true, this.components, window.CP_LAYOUT_COMPONENTS);
         }
 
-        App.trigger('field.layout.components', {components:this.components});
 
         this.on('mount', function() {
+            
+            App.trigger('field.layout.components', {components:this.components, opts:opts});
+            
+            // exclude components?
+            if (Array.isArray(opts.exclude) && opts.exclude.length) {
+
+                opts.exclude.forEach(function(c) {
+                    if ($this.components[c]) delete $this.components[c];
+                });
+            }
+            
 
             if (opts.components && App.Utils.isObject(opts.components)) {
                 this.components = App.$.extend(true, this.components, opts.components);
@@ -405,6 +415,10 @@
 
         remove(e) {
             this.items.splice(e.item.idx, 1);
+            
+            if (opts.child) {
+                this.parent.update()
+            }
         }
 
         settings(e) {
@@ -474,7 +488,7 @@
                     <a class="uk-invisible" onclick="{ parent.remove }"><i class="uk-text-danger uk-icon-trash-o"></i></a>
                 </div>
                 <div class="uk-margin">
-                    <field-layout bind="columns[{idx}].children" child="true" components="{ opts.components }"></field-layout>
+                    <field-layout bind="columns[{idx}].children" child="true" components="{ opts.components }" exclude="{ opts.exclude }"></field-layout>
                 </div>
             </div>
         </div>
@@ -531,7 +545,7 @@
             var n = this;
 
             while (n.parent) {
-                if (n.parent.root.getAttribute('data-is') == 'field-layout') {
+                if (n.parent.root.tagName == 'field-layout' || n.parent.root.getAttribute('data-is') == 'field-layout') {
                     n.parent.$setValue(n.parent.items);
                 }
                 n = n.parent;

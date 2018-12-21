@@ -19,7 +19,7 @@ $this->on('before', function() {
             return false;
         }
 
-        $token = $this->param('token', $_SERVER['HTTP_COCKPIT_TOKEN'] ?? null);
+        $token = $this->param('token', $_SERVER['HTTP_COCKPIT_TOKEN'] ?? $this->helper('utils')->getBearerToken());
 
         // api key check
         $allowed = false;
@@ -53,7 +53,7 @@ $this->on('before', function() {
                             break;
                         }
 
-                        foreach(explode("\n", $rules) as $rule) {
+                        foreach (explode("\n", $rules) as $rule) {
 
                             $rule = trim($rule);
                             if (!$rule) continue;
@@ -83,7 +83,7 @@ $this->on('before', function() {
                 'authenticated' => false,
                 'resource' => $resource,
                 'query' => ['path' => $path, 'parts' => $parts, 'params' => $params],
-                'user'=>null,
+                'user' => null,
             ]);
 
             $this->trigger('cockpit.api.authenticate', [$data]);
@@ -133,6 +133,11 @@ $this->on('before', function() {
                     $output['message'] = 'Oooops, something went wrong.';
                 }
             }
+        }
+
+        if ($output === false && $resource == 'public') {
+            $this->response->mime = 'json';
+            $this->stop(404);
         }
 
         if ($output === false && !$allowed) {

@@ -1,6 +1,6 @@
 <?php
 
-$this->module("collections")->extend([
+$this->module('collections')->extend([
 
     'createCollection' => function($name, $data = []) {
 
@@ -65,6 +65,8 @@ $this->module("collections")->extend([
 
         $this->app->trigger('collections.updatecollection', [$collection]);
         $this->app->trigger("collections.updatecollection.{$name}", [$collection]);
+
+        if (function_exists('opcache_reset')) opcache_reset();
 
         return $collection;
     },
@@ -187,11 +189,6 @@ $this->module("collections")->extend([
         $name       = $collection;
         $collection = $_collection['_id'];
 
-        // sort by custom order if collection is sortable
-        if (isset($_collection['sortable']) && $_collection['sortable'] && !isset($options['sort'])) {
-            //$options['sort'] = ['_o' => 1];
-        }
-
         // check rule
         $context = new \stdClass();
         $context->options = $options;
@@ -242,7 +239,6 @@ $this->module("collections")->extend([
         if (!$_collection) return false;
 
         $name       = $collection;
-        $collection = $_collection['_id'];
         $options    = [
             'filter'       => $criteria,
             'fields'       => $projection,
@@ -270,7 +266,7 @@ $this->module("collections")->extend([
         $return     = [];
         $modified   = time();
 
-        foreach($data as &$entry) {
+        foreach ($data as &$entry) {
 
             $isUpdate = isset($entry['_id']);
 
@@ -313,11 +309,11 @@ $this->module("collections")->extend([
                             break;
 
                         case 'url':
-                            $value = filter_var($value, FILTER_VALIDATE_URL, FILTER_FLAG_SCHEME_REQUIRED) ? $value:null;
+                            $value = filter_var($value, FILTER_VALIDATE_URL) ? $value:null;
                             break;
 
                         case 'email':
-                            $value = filter_var($value, FILTER_VALIDATE_EMAIL) ? $value:null;
+                            $value = $this->app->helper('utils')->isEmail($value) ? $value:null;
                             break;
 
                         case 'password':
@@ -344,11 +340,11 @@ $this->module("collections")->extend([
             }
 
             if (!$isUpdate) {
-                $entry["_created"] = $entry["_modified"];
+                $entry['_created'] = $entry['_modified'];
             }
 
             // check rule
-            $context = _check_collection_rule($_collection, 'read', [
+            $context = _check_collection_rule($_collection, $isUpdate ? 'update':'create', [
                 'options' => $options,
                 'entry'   => $entry
             ]);
@@ -388,7 +384,7 @@ $this->module("collections")->extend([
         $collection = $_collection['_id'];
 
         // check rule
-        $context = _check_collection_rule($_collection, 'remove', ['options' => ['filter' => $criteria]]);
+        $context = _check_collection_rule($_collection, 'delete', ['options' => ['filter' => $criteria]]);
 
         if ($context === false) {
             return false;
@@ -500,11 +496,11 @@ $this->module("collections")->extend([
         if (!isset($cache[$collection['name']])) {
 
             $fields = [
-                "acl" => [],
-                "localize" => []
+                'acl' => [],
+                'localize' => []
             ];
 
-            foreach ($collection["fields"] as $field) {
+            foreach ($collection['fields'] as $field) {
 
                 if (isset($field['acl']) && is_array($field['acl']) && count($field['acl'])) {
                     $fields['acl'][$field['name']] = $field['acl'];
@@ -553,7 +549,7 @@ $this->module("collections")->extend([
 
                 foreach ($localfields as $name => $local) {
 
-                    foreach($languages as $l) {
+                    foreach ($languages as $l) {
 
                         if (isset($entry["{$name}_{$l}"])) {
 
@@ -566,15 +562,15 @@ $this->module("collections")->extend([
                                 }
                             }
 
-                            unset($entry["{$name}_{$l}"]);
-                            unset($entry["{$name}_{$l}_slug"]);
-
                         } elseif ($l == $lang && $ignoreDefaultFallback) {
 
                             if ($ignoreDefaultFallback === true || (is_array($ignoreDefaultFallback) && in_array($name, $ignoreDefaultFallback))) {
                                 $entry[$name] = null;
                             }
                         }
+
+                        unset($entry["{$name}_{$l}"]);
+                        unset($entry["{$name}_{$l}_slug"]);
                     }
                 }
 
@@ -603,11 +599,11 @@ function cockpit_populate_collection(&$items, $maxlevel = -1, $level = 0, $field
             $items[$k] = cockpit_populate_collection($items[$k], $maxlevel, ($level + 1), $fieldsFilter);
         }
 
-        if (isset($v['_id'], $v['link'])) {
+        if ($level > 0 && isset($v['_id'], $v['link'])) {
             $link = $v['link'];
             $items[$k] = cockpit('collections')->_resolveLinkedItem($v['link'], $v['_id'], $fieldsFilter);
             $items[$k]['_link'] = $link;
-            $items[$k] = cockpit_populate_collection($items[$k], $maxlevel, $level, $fieldsFilter);
+            $items[$k] = cockpit_populate_collection($items[$k], $maxlevel, ($level + 1), $fieldsFilter);
         }
     }
 
@@ -648,7 +644,7 @@ function _check_collection_rule($collection, $rule, $_context = null) {
 }
 
 // ACL
-$app("acl")->addResource("collections", ['create', 'delete']);
+$app('acl')->addResource("collections", ['create', 'delete', 'manage']);
 
 $this->module("collections")->extend([
 

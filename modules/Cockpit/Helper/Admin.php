@@ -71,7 +71,11 @@ class Admin extends \Lime\Helper {
                 'locale'    => $this->app->helper('i18n')->locale,
                 'site_url'  => $this->app->pathToUrl('site:'),
                 'languages' => $languages,
-                'groups'    => $this->app->helper('acl')->getGroups()
+                'groups'    => $this->app->helper('acl')->getGroups(),
+
+                'acl' => [
+                    'finder' => $this->app->module('cockpit')->hasaccess('cockpit', 'finder')
+                ]
             ]
         ]);
     }
@@ -138,7 +142,7 @@ class Admin extends \Lime\Helper {
         return $this->app->module('cockpit')->updateUserOption($key, $value);
     }
 
-    public function denyRequest($message = null) {
+    public function denyRequest() {
 
         if ($this->app->module('cockpit')->getUser()) {
             $this->app->response->status = 401;

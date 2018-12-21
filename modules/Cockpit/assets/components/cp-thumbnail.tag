@@ -16,6 +16,7 @@
         this.on('mount', function() {
 
             if (!('IntersectionObserver' in window)) {
+                this.inView = true;
                 this.load();
                 return;
             }
@@ -41,9 +42,7 @@
         });
 
         this.on('update', function() {
-            if (this.inView) {
-                this.load();
-            }
+            if (this.inView) this.load();
         })
 
         this.load = function() {
@@ -52,6 +51,10 @@
             var mode = opts.mode || 'bestFit';
 
             if (!_src || src === _src) {
+                return;
+            }
+
+            if (!$this.refs.spinner.style) {
                 return;
             }
 
@@ -103,6 +106,10 @@
                     backgroundImage: 'url('+url+')',
                     visibility: 'visible'
                 });
+
+                if (!$this.refs.spinner.style) {
+                    return;
+                }
 
                 $this.refs.spinner.style.display = 'none';
                 $this.update();

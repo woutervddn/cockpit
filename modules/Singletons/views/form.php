@@ -28,7 +28,7 @@
     <div class="uk-margin-top" riot-view>
 
         <div class="uk-alert" if="{ !fields.length }">
-            @lang('No fields defined'). <a href="@route('/singleton/singleton')/{ singleton.name }">@lang('Define singleton fields').</a>
+            @lang('No fields defined'). <a href="@route('/singletons/singleton')/{ singleton.name }">@lang('Define singleton fields').</a>
         </div>
 
         <h3 class="uk-flex uk-flex-middle uk-text-bold">
@@ -55,7 +55,7 @@
 
                     <div class="uk-grid uk-grid-match uk-grid-gutter">
 
-                        <div class="uk-width-medium-{field.width}" each="{field,idx in fields}" show="{!group || (group == field.group) }" if="{ hasFieldAccess(field.name) }" no-reorder>
+                        <div class="uk-width-medium-{field.width}" each="{field,idx in fields}" show="{checkVisibilityRule(field) && (!group || (group == field.group)) }" if="{ hasFieldAccess(field.name) }" no-reorder>
 
                             <div class="uk-panel">
 
@@ -90,51 +90,59 @@
 
                     </div>
 
-                    <div class="uk-margin-large-top">
-                        <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
-                        <a class="uk-button uk-button-link" href="@route('/singletons')">@lang('Close')</a>
-                    </div>
+                    <cp-actionbar>
+                        <div class="uk-container uk-container-center">
+                            <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
+                            <a class="uk-button uk-button-link" href="@route('/singletons')">@lang('Close')</a>
+                        </div>
+                    </cp-actionbar>
 
                 </form>
             </div>
 
             <div class="uk-grid-margin uk-width-medium-1-4 uk-flex-order-first uk-flex-order-last-medium">
 
-                <div class="uk-panel">
+                <div class="uk-margin uk-form" if="{ languages.length }">
 
-                    <div class="uk-margin uk-form" if="{ languages.length }">
+                    <div class="uk-width-1-1 uk-form-select">
 
-                        <div class="uk-width-1-1 uk-form-select">
+                        <label class="uk-text-small">@lang('Language')</label>
+                        <div class="uk-margin-small-top"><span class="uk-badge uk-badge-outline {lang ? 'uk-text-primary' : 'uk-text-muted'}">{ lang ? _.find(languages,{code:lang}).label:'Default' }</span></div>
 
-                            <label class="uk-text-small">@lang('Language')</label>
-                            <div class="uk-margin-small-top"><span class="uk-badge uk-badge-outline {lang ? 'uk-text-primary' : 'uk-text-muted'}">{ lang ? _.find(languages,{code:lang}).label:'Default' }</span></div>
-
-                            <select bind="lang">
-                                <option value="">@lang('Default')</option>
-                                <option each="{language in languages}" value="{language.code}">{language.label}</option>
-                            </select>
-                        </div>
-
-                    </div>
-
-                    <div class="uk-margin">
-                        <label class="uk-text-small">@lang('Revisions')</label>
-                        <div class="uk-margin-small-top">
-                            <span class="uk-position-relative">
-                                <cp-revisions-info class="uk-badge uk-text-large" rid="{singleton._id}"></cp-revisions-info>
-                                <a class="uk-position-cover" href="@route('/singletons/revisions/'.$singleton['name'])/{singleton._id}"></a>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="uk-margin">
-                        <label class="uk-text-small">@lang('Last Modified')</label>
-                        <div class="uk-margin-small-top uk-text-muted"><i class="uk-icon-calendar uk-margin-small-right"></i> {  App.Utils.dateformat( new Date( 1000 * singleton._modified )) }</div>
+                        <select bind="lang">
+                            <option value="">@lang('Default')</option>
+                            <option each="{language in languages}" value="{language.code}">{language.label}</option>
+                        </select>
                     </div>
 
                 </div>
 
+                <div class="uk-margin">
+                    <label class="uk-text-small">@lang('Last Modified')</label>
+                    <div class="uk-margin-small-top uk-text-muted"><i class="uk-icon-calendar uk-margin-small-right"></i> {  App.Utils.dateformat( new Date( 1000 * singleton._modified )) }</div>
+                </div>
+
+                <div class="uk-margin">
+                    <label class="uk-text-small">@lang('Revisions')</label>
+                    <div class="uk-margin-small-top">
+                        <span class="uk-position-relative">
+                            <cp-revisions-info class="uk-badge uk-text-large" rid="{singleton._id}"></cp-revisions-info>
+                            <a class="uk-position-cover" href="@route('/singletons/revisions/'.$singleton['name'])/{singleton._id}"></a>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="uk-margin" if="{data._mby}">
+                    <label class="uk-text-small">@lang('Last update by')</label>
+                    <div class="uk-margin-small-top">
+                        <cp-account account="{data._mby}"></cp-account>
+                    </div>
+                </div>
+
+                @trigger('singletons.form.aside')
+
             </div>
+
 
         </div>
 
@@ -198,6 +206,11 @@
 
                 // bind clobal command + save
                 Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function(e) {
+
+                    if (App.$('.uk-modal.uk-open').length) {
+                        return;
+                    }
+
                     $this.submit(e);
                     return false;
                 });
@@ -241,13 +254,13 @@
                     return;
                 }
 
-                App.request('/singletons/update_data/'+this.singleton.name, {data:this.data}).then(function(resp) {
+                App.request('/singletons/update_data/'+this.singleton.name, {data:this.data}).then(function(res) {
 
-                    if (resp) {
+                    if (res) {
 
                         App.ui.notify("Saving successful", "success");
 
-                        $this.data = resp.data;
+                        $this.data = res.data;
 
                         $this.fields.forEach(function(field){
 
@@ -265,6 +278,9 @@
                     } else {
                         App.ui.notify("Saving failed.", "danger");
                     }
+
+                }, function(res) {
+                    App.ui.notify(res && (res.message || res.error) ? (res.message || res.error) : "Saving failed.", "danger");
                 });
             }
 
@@ -287,9 +303,29 @@
             copyLocalizedValue(e) {
 
                 var field = e.target.getAttribute('field'),
-                    lang = e.target.getAttribute('lang');
+                    lang = e.target.getAttribute('lang'),
+                    val  = JSON.stringify(this.data[field+(lang ? '_':'')+lang]);
 
-                this.data[field+(this.lang ? '_':'')+this.lang] = this.data[field+(lang ? '_':'')+lang];
+                this.data[field+(this.lang ? '_':'')+this.lang] = JSON.parse(val);
+            },
+
+            checkVisibilityRule(field) {
+
+                if (field.options && field.options['@visibility']) {
+
+                    try {
+                        return (new Function('$', 'v','return ('+field.options['@visibility']+')'))(this.data, function(key) {
+                            var f = this.fieldsidx[key] || {};
+                            return this.data[(f.localize && this.lang ? (f.name+'_'+this.lang):f.name)];
+                        }.bind(this));
+                    } catch(e) {
+                        return false;
+                    }
+
+                    return this.data.check;
+                }
+
+                return true;
             }
 
         </script>

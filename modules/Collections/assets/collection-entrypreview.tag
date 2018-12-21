@@ -145,7 +145,7 @@
 
                     <div class="uk-grid uk-grid-match uk-grid-gutter">
 
-                        <div class="uk-width-1-1" each="{field,idx in fields}" show="{!group || (group == field.group) }" if="{ hasFieldAccess(field.name) }" no-reorder>
+                        <div class="uk-width-1-1" each="{field,idx in fields}" show="{checkVisibilityRule(field) && (!group || (group == field.group)) }" if="{ hasFieldAccess(field.name) }" no-reorder>
 
                             <div class="uk-panel">
 
@@ -240,10 +240,9 @@
             this.refs.iframe.addEventListener('load', function() {
 
                 $this.$iframe = $this.refs.iframe.contentWindow;
+                $this.$idle   = setInterval(_.throttle(function() {
 
-                $this.$idle = setInterval(_.throttle(function() {
-
-                    var hash = JSON.stringify($this.entry);
+                    var hash = JSON.stringify({entry:$this.entry, lang: $this.lang});
 
                     if ($this.$cache != hash) {
                         $this.$cache = hash;
@@ -258,6 +257,10 @@
             this.refs.selectGroup.value = this.group;
 
             document.body.style.overflow = 'hidden';
+        });
+
+        this.on('unmount', function() {
+            clearTimeout(this.$idle);
         });
 
         setMode(mode) {
@@ -312,6 +315,25 @@
             }
 
             return false;
+        }
+        
+        checkVisibilityRule(field) {
+
+            if (field.options && field.options['@visibility']) {
+
+                try {
+                    return (new Function('$', 'v','return ('+field.options['@visibility']+')'))(this.entry, function(key) {
+                        var f = this.fieldsidx[key] || {};
+                        return this.entry[(f.localize && this.lang ? (f.name+'_'+this.lang):f.name)];
+                    }.bind(this));
+                } catch(e) {
+                    return false;
+                }
+
+                return this.data.check;
+            }
+
+            return true;
         }
 
     </script>

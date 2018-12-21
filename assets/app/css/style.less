@@ -36,27 +36,10 @@
     animation-duration: .35s;
 }
 
-.app-header {
+.uk-container-breakout {
     position: relative;
-    background-color: @global-background;
-    box-shadow: 0 0 20px rgba(0,0,0,0.07);
-    margin-bottom: 2.5rem;
-    z-index: 10;
-}
-
-.app-header-topbar {
-
-    //background-color: @global-primary-background;
-    border-bottom: 1px #eee solid;
-    padding: 15px 0;
-    box-sizing: border-box;
-    min-height: 60px;
-
-    a { text-decoration: none !important; }
-
-    .uk-contrast * {
-        color: @global-contrast-color;
-    }
+    width: 100vw;
+    left: ~"calc(-1 * (100vw - 100%) / 2)";
 }
 
 .uk-svg-adjust path,
@@ -75,18 +58,67 @@
     stroke: currentColor;
 }
 
+.app-header {
+    position: relative;
+    background-color: @global-background;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin-bottom: 2.5rem;
+    z-index: 10;
+}
+
+.app-header-topbar {
+
+    //background-color: @global-primary-background;
+    padding: 15px 0;
+    box-sizing: border-box;
+    min-height: 60px;
+
+    a { text-decoration: none !important; }
+
+    .uk-contrast * {
+        color: @global-contrast-color;
+    }
+}
+
+.app-logo {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    background-image: url(../media/logo.svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+    margin-right: 10px;
+}
+
 .app-panel-dropdown {
     margin-top: 25px;
     width: 600px;
     max-width: 85vw;
 }
 
+.app-panel-dropdown .uk-nav-side a:hover,
+.app-panel-dropdown .uk-nav-side .uk-active a {
+    background: none;
+    color: @global-primary-background;
+}
+
 .app-modulesbar > li > a {
     padding: 0 4px;
+    color: rgba(0,0,0,.3);
 }
 
 .app-modulesbar a.uk-active {
     color: @global-primary-background;
+    position: relative;
+}
+
+.app-modulesbar > li > .uk-active:after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    border-bottom: 3px @global-primary-background solid;
+    bottom: -20px;
+    left: 0;
 }
 
 .app-main {
@@ -95,6 +127,17 @@
 
 .app-footer {
     margin: (2 * @global-margin-large) 0;
+}
+
+cp-actionbar {
+    position:fixed;
+    display:block;
+    left:0;
+    right:0;
+    bottom:0;
+    padding: 15px 0;
+    background:@global-background;
+    z-index: 4;
 }
 
 .material-ripple {
@@ -116,6 +159,15 @@
         transform: scale(2.5);
         opacity: 0
     }
+}
+
+.dashboard-header-panel {
+    background: @global-contrast-color;
+    margin-top: -35px;
+    margin-bottom: -80px;
+    padding-top: 20px;
+    padding-bottom: 120px;
+    z-index: 0;
 }
 
 

@@ -10,8 +10,8 @@ class Client {
     /**
      * @var array
      */
-    protected $databases = array();
-    
+    protected $databases = [];
+
     /**
      * @var string
      */
@@ -24,26 +24,26 @@ class Client {
 
     /**
      * Constructor
-     * 
-     * @param string $path   
+     *
+     * @param string $path
      * @param array  $options
      */
-    public function __construct($path, $options=array()) {
+    public function __construct($path, $options = []) {
         $this->path    = rtrim($path, '\\');
         $this->options = $options;
     }
 
     /**
      * List Databases
-     * 
+     *
      * @return array List of databases
      */
     public function listDBs() {
-        
-        $databases = array();
+
+        $databases = [];
 
         foreach (new \DirectoryIterator($this->path) as $fileInfo) {
-            if(preg_match('/\.sqlite$/', $fileInfo->getFilename())) {
+            if (preg_match('/\.sqlite$/', $fileInfo->getFilename())) {
                 $databases[] = str_replace(".sqlite", "", $fileInfo->getFilename());
              }
         }
@@ -53,10 +53,10 @@ class Client {
 
     /**
      * Select Collection
-     * 
-     * @param  string $database  
+     *
+     * @param  string $database
      * @param  string $collection
-     * @return object            
+     * @return object
      */
     public function selectCollection($database, $collection) {
 
@@ -65,13 +65,13 @@ class Client {
 
     /**
      * Select database
-     * 
+     *
      * @param  string $name
      * @return object
      */
     public function selectDB($name) {
-        
-        if(!isset($this->databases[$name])) {
+
+        if (!isset($this->databases[$name])) {
             $this->databases[$name] = new Database($this->path.'/'.$name.'.sqlite', $this->options);
         }
 
@@ -79,7 +79,7 @@ class Client {
     }
 
     public function __get($database) {
-        
+
         return $this->selectDB($database);
     }
 }

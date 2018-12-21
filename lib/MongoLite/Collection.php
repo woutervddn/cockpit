@@ -50,10 +50,11 @@ class Collection {
 
             foreach ($document as &$doc) {
 
-                if(!is_array($doc)) continue;
+                if (!is_array($doc)) continue;
 
                 $res = $this->_insert($doc);
-                if(!$res) {
+
+                if (!$res) {
                     $this->database->connection->rollBack();
                     return $res;
                 }
@@ -73,27 +74,26 @@ class Collection {
     protected function _insert(&$document) {
 
         $table           = $this->name;
-        $document["_id"] = isset($document["_id"]) ? $document["_id"] : uniqid().'doc'.rand();
-        $data            = array("document" => json_encode($document, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE));
+        $document['_id'] = isset($document['_id']) ? $document['_id'] : createMongoDbLikeId();
+        $data            = ['document' => json_encode($document, JSON_UNESCAPED_UNICODE)];
 
-        $fields = array();
-        $values = array();
+        $fields = [];
+        $values = [];
 
         foreach($data as $col=>$value){
             $fields[] = "`{$col}`";
-            $values[] = (is_null($value) ? 'NULL':$this->database->connection->quote($value));
+            $values[] = (is_null($value) ? 'NULL' : $this->database->connection->quote($value));
         }
 
         $fields = implode(',', $fields);
         $values = implode(',', $values);
 
         $sql = "INSERT INTO {$table} ({$fields}) VALUES ({$values})";
-
         $res = $this->database->connection->exec($sql);
 
-        if($res){
+        if ($res){
             return $this->database->connection->lastInsertId();
-        }else{
+        } else {
             trigger_error('SQL Error: '.implode(', ', $this->database->connection->errorInfo()).":\n".$sql);
             return false;
         }
@@ -123,11 +123,11 @@ class Collection {
         $stmt   = $this->database->connection->query($sql);
         $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        foreach($result as &$doc) {
+        foreach ($result as &$doc) {
 
-            $document = array_merge(json_decode($doc["document"], true), $data);
+            $document = array_merge(json_decode($doc['document'], true), $data);
 
-            $sql = "UPDATE ".$this->name." SET document=".$this->database->connection->quote(json_encode($document,JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE))." WHERE id=".$doc["id"];
+            $sql = "UPDATE ".$this->name." SET document=".$this->database->connection->quote(json_encode($document, JSON_UNESCAPED_UNICODE))." WHERE id=".$doc['id'];
 
             $this->database->connection->exec($sql);
         }
